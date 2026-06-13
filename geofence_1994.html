@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0D0D0D">
+<title>1994 SRL — Geo Tareas</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0D0D0D;--surface:#161616;--surface2:#1E1E1E;
+  --border:#2A2A2A;--text:#F0F0EE;--muted:#888;--hint:#444;
+  --amber:#E8A020;--amber-dim:rgba(232,160,32,.12);
+  --green:#4CAF50;--green-dim:rgba(76,175,80,.12);
+  --red:#F06060;--red-dim:rgba(240,96,96,.12);
+  --blue:#5B9CF6;--r:12px;--r-sm:8px
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--bg);color:var(--text);font-size:15px;
+  line-height:1.5;min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;
+  padding:0 0 32px;
+}
+
+/* Header */
+.header{
+  width:100%;background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:16px 20px;display:flex;align-items:center;gap:12px;
+}
+.brand-icon{
+  width:36px;height:36px;border-radius:8px;
+  background:var(--amber);display:flex;align-items:center;
+  justify-content:center;font-weight:800;font-size:12px;
+  color:#0D0D0D;letter-spacing:-.5px;flex-shrink:0
+}
+.header-text h1{font-size:15px;font-weight:600;letter-spacing:-.3px}
+.header-text p{font-size:11px;color:var(--muted);margin-top:1px}
+
+/* Status pill */
+.status-pill{
+  margin-left:auto;display:flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:600;padding:5px 11px;
+  border-radius:20px;letter-spacing:.3px;text-transform:uppercase;
+  transition:all .3s
+}
+.status-pill.idle{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+.status-pill.tracking{background:var(--green-dim);color:var(--green);border:1px solid rgba(76,175,80,.3)}
+.status-pill.alert{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(232,160,32,.3);animation:pulse 1.5s infinite}
+.pill-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* Main */
+.main{width:100%;max-width:480px;padding:20px 16px;display:flex;flex-direction:column;gap:16px}
+
+/* Pos card */
+.pos-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:16px;
+}
+.pos-label{font-size:10px;font-weight:700;color:var(--hint);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px}
+.pos-coords{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px
+}
+.coord-item{background:var(--surface2);border-radius:var(--r-sm);padding:10px 12px}
+.coord-name{font-size:10px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
+.coord-val{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text)}
+.accuracy-row{
+  display:flex;align-items:center;gap:8px;
+  font-size:12px;color:var(--muted);padding-top:8px;
+  border-top:1px solid var(--border)
+}
+.accuracy-dot{width:8px;height:8px;border-radius:50%;background:var(--hint);flex-shrink:0;transition:background .3s}
+.accuracy-dot.good{background:var(--green)}
+.accuracy-dot.ok{background:var(--amber)}
+.accuracy-dot.bad{background:var(--red)}
+
+/* Clients list */
+.section-label{
+  font-size:10px;font-weight:700;color:var(--hint);
+  letter-spacing:1px;text-transform:uppercase;padding:0 4px
+}
+
+.client-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;transition:border-color .3s
+}
+.client-card.nearby{border-color:rgba(232,160,32,.5);box-shadow:0 0 0 1px rgba(232,160,32,.15)}
+.client-card.inside{border-color:rgba(76,175,80,.6);box-shadow:0 0 0 2px rgba(76,175,80,.12)}
+
+.client-header{
+  padding:14px 16px;display:flex;align-items:flex-start;gap:12px
+}
+.client-icon{
+  width:36px;height:36px;border-radius:var(--r-sm);
+  background:var(--surface2);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;flex-shrink:0
+}
+.client-info{flex:1;min-width:0}
+.client-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.client-addr{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.distance-badge{
+  flex-shrink:0;text-align:right
+}
+.dist-val{font-size:18px;font-weight:700;letter-spacing:-1px;line-height:1}
+.dist-unit{font-size:10px;color:var(--muted);margin-top:2px}
+.dist-val.far{color:var(--hint)}
+.dist-val.near{color:var(--amber)}
+.dist-val.inside{color:var(--green)}
+
+/* Tasks inside card */
+.tasks-body{
+  border-top:1px solid var(--border);
+  padding:12px 16px;display:none;
+  flex-direction:column;gap:6px;background:var(--surface2)
+}
+.tasks-body.visible{display:flex}
+.task-item{
+  display:flex;align-items:flex-start;gap:8px;
+  font-size:12px;padding:8px 10px;
+  background:var(--surface);border-radius:6px;border:1px solid var(--border)
+}
+.task-bullet{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--amber);flex-shrink:0;margin-top:5px
+}
+.task-text{color:var(--text);line-height:1.4}
+
+/* Notif panel */
+.notif-panel{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--surface);border-top:2px solid var(--amber);
+  padding:20px 20px 28px;transform:translateY(100%);
+  transition:transform .35s cubic-bezier(.4,0,.2,1);
+  z-index:100;max-height:60vh;overflow-y:auto
+}
+.notif-panel.show{transform:translateY(0)}
+.notif-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:14px
+}
+.notif-title{font-size:15px;font-weight:700;color:var(--amber)}
+.notif-close{
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--muted);border-radius:6px;padding:4px 10px;
+  font-size:12px;cursor:pointer
+}
+.notif-client{font-size:16px;font-weight:700;margin-bottom:4px}
+.notif-addr{font-size:12px;color:var(--muted);margin-bottom:14px}
+.notif-tasks{display:flex;flex-direction:column;gap:6px}
+.notif-task{
+  display:flex;align-items:flex-start;gap:10px;
+  background:var(--surface2);border-radius:8px;
+  padding:10px 12px;border:1px solid var(--border)
+}
+.ntask-num{
+  font-size:10px;font-weight:700;color:var(--amber);
+  background:var(--amber-dim);border-radius:4px;
+  padding:2px 6px;flex-shrink:0;margin-top:1px
+}
+.ntask-text{font-size:13px;line-height:1.4}
+
+/* Start button */
+.start-btn{
+  width:100%;padding:16px;border-radius:var(--r);
+  background:var(--amber);color:#0D0D0D;
+  font-size:15px;font-weight:700;border:none;cursor:pointer;
+  letter-spacing:-.2px;transition:opacity .15s
+}
+.start-btn:active{opacity:.8}
+.start-btn:disabled{background:var(--surface2);color:var(--muted);cursor:default}
+
+.error-card{
+  background:var(--red-dim);border:1px solid rgba(240,96,96,.3);
+  border-radius:var(--r);padding:14px 16px;
+  font-size:13px;color:var(--red);display:none
+}
+.error-card.show{display:block}
+
+/* Overlay backdrop */
+.backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);
+  z-index:99;display:none
+}
+.backdrop.show{display:block}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="brand-icon">1994</div>
+  <div class="header-text">
+    <h1>Geo Tareas</h1>
+    <p>1994 SRL &mdash; Promotores</p>
+  </div>
+  <div class="status-pill idle" id="status-pill">
+    <div class="pill-dot"></div>
+    <span id="status-text">Inactivo</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <button class="start-btn" id="start-btn" onclick="startTracking()">
+    Iniciar seguimiento GPS
+  </button>
+
+  <div class="error-card" id="error-card"></div>
+
+  <!-- Posición actual -->
+  <div class="pos-card" id="pos-card" style="display:none">
+    <div class="pos-label">Tu posición actual</div>
+    <div class="pos-coords">
+      <div class="coord-item">
+        <div class="coord-name">Latitud</div>
+        <div class="coord-val" id="pos-lat">—</div>
+      </div>
+      <div class="coord-item">
+        <div class="coord-name">Longitud</div>
+        <div class="coord-val" id="pos-lng">—</div>
+      </div>
+    </div>
+    <div class="accuracy-row">
+      <div class="accuracy-dot" id="acc-dot"></div>
+      <span id="acc-text">Esperando señal...</span>
+    </div>
+  </div>
+
+  <!-- Clientes -->
+  <div class="section-label" id="clients-label" style="display:none">Puntos de venta asignados</div>
+  <div id="clients-list"></div>
+
+</div>
+
+<!-- Notificación emergente -->
+<div class="backdrop" id="backdrop" onclick="closeNotif()"></div>
+<div class="notif-panel" id="notif-panel">
+  <div class="notif-header">
+    <div class="notif-title">📍 ¡Estás en el PDV!</div>
+    <button class="notif-close" onclick="closeNotif()">Cerrar</button>
+  </div>
+  <div class="notif-client" id="notif-client"></div>
+  <div class="notif-addr" id="notif-addr"></div>
+  <div class="notif-tasks" id="notif-tasks"></div>
+</div>
+
+<script>
+// ─── DATOS DE CLIENTES ───────────────────────────────────────────────
+// Para agregar más clientes, copiar el objeto y completar los campos
+const CLIENTES = [
+  {
+    codigo:   17110,
+    nombre:   'PETA SRL',
+    direccion:'AVDA SAN MARTIN Y RUTA 12',
+    localidad:'PUERTO RICO',
+    telefono: '3743410414',
+    lat:      -26.822776670,
+    lng:      -55.029238330,
+    tareas: [
+      // Estas tareas se pueden cargar desde el dashboard luego
+      // Por ahora se definen manualmente para la prueba
+      'Verificar exhibición de productos en góndola',
+      'Controlar stock mínimo de NABS',
+      'Registrar compra de SKUs distintos UNG',
+    ]
+  }
+];
+
+// ─── CONFIGURACIÓN ──────────────────────────────────────────────────
+const RADIO_METROS  = 50;      // Radio de activación en metros
+const INTERVALO_GPS = 5000;    // Cada cuántos ms actualiza la posición (5 seg)
+
+// ─── ESTADO ─────────────────────────────────────────────────────────
+let watchId       = null;
+let posActual     = null;
+let alertasMostradas = new Set(); // Para no repetir la misma alerta
+
+// ─── FÓRMULA HAVERSINE (distancia entre dos coordenadas) ────────────
+function distanciaMetros(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) *
+            Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// ─── INICIAR SEGUIMIENTO ─────────────────────────────────────────────
+function startTracking() {
+  if (!navigator.geolocation) {
+    showError('Tu navegador no soporta geolocalización.');
+    return;
+  }
+
+  // Pedir permiso de notificaciones
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+
+  document.getElementById('start-btn').disabled = true;
+  document.getElementById('start-btn').textContent = 'Rastreando...';
+  document.getElementById('pos-card').style.display = 'block';
+  document.getElementById('clients-label').style.display = 'block';
+
+  setPill('tracking', 'Rastreando');
+  renderClientes([]);
+
+  watchId = navigator.geolocation.watchPosition(
+    onPosicion,
+    onError,
+    { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
+  );
+}
+
+// ─── CALLBACK NUEVA POSICIÓN ─────────────────────────────────────────
+function onPosicion(pos) {
+  posActual = pos;
+  const lat = pos.coords.latitude;
+  const lng = pos.coords.longitude;
+  const acc = pos.coords.accuracy;
+
+  // Actualizar UI de posición
+  document.getElementById('pos-lat').textContent = lat.toFixed(6);
+  document.getElementById('pos-lng').textContent = lng.toFixed(6);
+
+  const dot = document.getElementById('acc-dot');
+  const accText = document.getElementById('acc-text');
+  if (acc <= 15) {
+    dot.className = 'accuracy-dot good';
+    accText.textContent = `Precisión: ±${Math.round(acc)} m — Señal excelente`;
+  } else if (acc <= 40) {
+    dot.className = 'accuracy-dot ok';
+    accText.textContent = `Precisión: ±${Math.round(acc)} m — Señal aceptable`;
+  } else {
+    dot.className = 'accuracy-dot bad';
+    accText.textContent = `Precisión: ±${Math.round(acc)} m — Señal débil`;
+  }
+
+  // Calcular distancias y verificar geofence
+  const clientesConDist = CLIENTES.map(c => {
+    const dist = Math.round(distanciaMetros(lat, lng, c.lat, c.lng));
+    return { ...c, distancia: dist };
+  });
+
+  clientesConDist.sort((a, b) => a.distancia - b.distancia);
+  renderClientes(clientesConDist);
+  verificarGeofence(clientesConDist);
+}
+
+// ─── VERIFICAR SI ESTÁ DENTRO DEL RADIO ──────────────────────────────
+function verificarGeofence(clientes) {
+  let dentroDe = null;
+
+  for (const c of clientes) {
+    if (c.distancia <= RADIO_METROS) {
+      // Está dentro del radio
+      if (!alertasMostradas.has(c.codigo)) {
+        alertasMostradas.add(c.codigo);
+        dentroDe = c;
+        mostrarAlerta(c);
+        break;
+      }
+    } else if (c.distancia > RADIO_METROS * 3) {
+      // Si se aleja bastante, permitir que la alerta se muestre de nuevo
+      alertasMostradas.delete(c.codigo);
+    }
+  }
+
+  if (dentroDe) {
+    setPill('alert', `En PDV: ${dentroDe.nombre.split(' ')[0]}`);
+  } else {
+    setPill('tracking', 'Rastreando');
+  }
+}
+
+// ─── MOSTRAR ALERTA ───────────────────────────────────────────────────
+function mostrarAlerta(cliente) {
+  // Panel emergente
+  document.getElementById('notif-client').textContent = cliente.nombre;
+  document.getElementById('notif-addr').textContent =
+    `${cliente.direccion} — ${cliente.localidad} · ${cliente.distancia}m`;
+
+  const tareasEl = document.getElementById('notif-tasks');
+  tareasEl.innerHTML = cliente.tareas.map((t, i) => `
+    <div class="notif-task">
+      <span class="ntask-num">${i+1}</span>
+      <span class="ntask-text">${t}</span>
+    </div>
+  `).join('');
+
+  document.getElementById('backdrop').classList.add('show');
+  document.getElementById('notif-panel').classList.add('show');
+
+  // Notificación del sistema (si tiene permiso)
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification(`📍 PDV: ${cliente.nombre}`, {
+      body: `${cliente.tareas.length} tareas pendientes — ${cliente.direccion}`,
+      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="%23E8A020"/><text x="16" y="22" font-size="14" font-weight="800" text-anchor="middle" fill="%230D0D0D">94</text></svg>',
+      vibrate: [200, 100, 200],
+      requireInteraction: true
+    });
+  }
+
+  // Vibrar el celular si tiene soporte
+  if ('vibrate' in navigator) {
+    navigator.vibrate([300, 100, 300, 100, 300]);
+  }
+}
+
+function closeNotif() {
+  document.getElementById('backdrop').classList.remove('show');
+  document.getElementById('notif-panel').classList.remove('show');
+}
+
+// ─── RENDERIZAR LISTA DE CLIENTES ─────────────────────────────────────
+function renderClientes(clientes) {
+  const lista = document.getElementById('clients-list');
+
+  if (clientes.length === 0) {
+    lista.innerHTML = CLIENTES.map(c => clienteCardHTML(c, null)).join('');
+    return;
+  }
+
+  lista.innerHTML = clientes.map(c => clienteCardHTML(c, c.distancia)).join('');
+}
+
+function clienteCardHTML(c, dist) {
+  const dentro   = dist !== null && dist <= RADIO_METROS;
+  const cerca    = dist !== null && dist <= RADIO_METROS * 3 && !dentro;
+  const cardClass = dentro ? 'inside' : cerca ? 'nearby' : '';
+
+  let distHTML = '';
+  if (dist === null) {
+    distHTML = `<div class="distance-badge"><div class="dist-val far">—</div><div class="dist-unit">metros</div></div>`;
+  } else {
+    const cls = dentro ? 'inside' : dist < 200 ? 'near' : 'far';
+    const label = dentro ? '✓ Aquí' : dist >= 1000 ? `${(dist/1000).toFixed(1)} km` : `${dist} m`;
+    const unit  = dentro ? 'dentro del radio' : dist >= 1000 ? 'de distancia' : 'de distancia';
+    distHTML = `<div class="distance-badge"><div class="dist-val ${cls}">${label}</div><div class="dist-unit">${unit}</div></div>`;
+  }
+
+  const tareasHTML = dentro ? `
+    <div class="tasks-body visible">
+      ${c.tareas.map((t,i) => `
+        <div class="task-item">
+          <div class="task-bullet"></div>
+          <div class="task-text">${t}</div>
+        </div>
+      `).join('')}
+    </div>
+  ` : '';
+
+  return `
+    <div class="client-card ${cardClass}">
+      <div class="client-header">
+        <div class="client-icon">🏪</div>
+        <div class="client-info">
+          <div class="client-name">${c.nombre}</div>
+          <div class="client-addr">${c.direccion} · ${c.localidad}</div>
+        </div>
+        ${distHTML}
+      </div>
+      ${tareasHTML}
+    </div>
+  `;
+}
+
+// ─── UI HELPERS ───────────────────────────────────────────────────────
+function setPill(estado, texto) {
+  const pill = document.getElementById('status-pill');
+  pill.className = `status-pill ${estado}`;
+  document.getElementById('status-text').textContent = texto;
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-card');
+  el.textContent = msg;
+  el.classList.add('show');
+  setPill('idle', 'Error');
+  document.getElementById('start-btn').disabled = false;
+  document.getElementById('start-btn').textContent = 'Reintentar';
+}
+
+function onError(err) {
+  const msgs = {
+    1: 'Permiso de ubicación denegado. Activalo en la configuración del navegador.',
+    2: 'No se pudo obtener tu ubicación. Verificá la señal GPS.',
+    3: 'El GPS tardó demasiado. Intentá de nuevo.'
+  };
+  showError(msgs[err.code] || 'Error de geolocalización.');
+}
+</script>
+</body>
+</html>
